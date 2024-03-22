@@ -74,9 +74,9 @@ const Slider = (props) => {
   const [slide, setSlide] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
 
-  const logging = () => {
-    console.log("log");
-  };
+  // const logging = () => {
+  //   console.log("log");
+  // };
 
   useEffect(() => {
     console.log("effect slide");
