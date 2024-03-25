@@ -1,12 +1,18 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Container } from "react-bootstrap";
 import "./App.css";
+
+const countTotal = (num) => {
+  console.log("couting...");
+  return num + 10;
+};
 
 const Slider = (props) => {
   const [slide, setSlide] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
 
   //если в завис-тях пустой массив, то ф-ция запустится 1 раз - при загрузке страницы - важно для оптимизации проекта
+  //useCallback - закэшировали ф-цию!
   const getSomeImages = useCallback(() => {
     console.log("как будто получили от сервера ответ - массив картинок");
     return [
@@ -24,20 +30,35 @@ const Slider = (props) => {
     setAutoplay((autoplay) => !autoplay);
   };
 
+  //useMemo - запускается в рендеринге
+  //Значение не пересчитывается при рендере, оно запомнено (мемоизировано), если состояние (state) не входит в стек зависимостей
+  //без использования useMemo значение ф-ции будет пересчитано при каждом рендере
+  //useMemo - закэшировали значение ф-ции!
+  const total = useMemo(() => {
+    return countTotal(slide);
+  }, [slide]);
+
+  const style = useMemo(
+    () => ({
+      color: slide > 4 ? "red" : "green",
+    }),
+    [slide]
+  );
+
+  useEffect(() => {
+    console.log("перем style пересчиталась");
+  }, [style]);
+
   return (
     <Container>
       <div className="slider w-50 m-auto">
-        {/* если использовать массив здесь, то он будет заново отрисовываться при каждом рендеринге - это плохо, например при > объеме картинок */}
-        {/* {getSomeImages().map((url, i) => {
-          return (
-            <img key={i} className="d-block w-100" src={url} alt="slide" />
-          );
-        })} */}
-
         <Slide getSomeImages={getSomeImages} />
 
         <div className="text-center mt-5">
           Active slide {slide} <br /> {autoplay ? "auto" : null}
+        </div>
+        <div style={style} className="text-center mt-5">
+          Total slides: {total}
         </div>
         <div className="buttons mt-3">
           <button
