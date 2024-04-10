@@ -1,136 +1,104 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Container } from "react-bootstrap";
+import { Transition } from "react-transition-group";
 import "./App.css";
 
-// Компонент высшего порядка - HOC - начинается всегда с with
-const withSlider = (BaseComponent, getData) => {
-  return (props) => {
-    const [slide, setSlide] = useState(0);
-    const [autoplay, setAutoplay] = useState(false);
+const Modal = (props) => {
+  const { show } = props;
+  const duration = 500;
 
-    useEffect(() => {
-      setSlide(getData());
-    }, []);
-
-    function changeSlide(i) {
-      setSlide((slide) => slide + i);
-    }
-
-    return (
-      <BaseComponent
-        {...props}
-        slide={slide}
-        autoplay={autoplay}
-        setAutoplay={setAutoplay}
-        changeSlide={changeSlide}
-      />
-    );
+  // св-во display не поддается анимации
+  const defaultStyle = {
+    transition: `all ${duration}ms ease-in-out`,
+    opacity: 0,
+    visibility: "hidden",
   };
-};
 
-const getDataFormFirstFetch = () => {
-  return 10;
-};
-const getDataFormSecondFetch = () => {
-  return 20;
-};
+  const transitionStyles = {
+    entering: { opacity: 1, visibility: "visible" },
+    entered: { opacity: 1, visibility: "visible" },
+    exiting: { opacity: 0, visibility: "hidden" },
+    exited: { opacity: 0, visibility: "hidden" },
+  };
 
-const SliderFirst = (props) => {
-  const { slide, changeSlide } = props;
+  //   unmountOnExit - когда модалка закрыта, то ее нет в дом-дереве
+  // onEnter - метод применяется, как только началась загрузка эл-та - перед стартом анимации скрыли кнопку
+  // onExited - метод применяется, как только эл-т полностью завершил работу - после всей анимации показали кнопку
   return (
-    <Container>
-      <div className="slider w-50 m-auto">
-        <img
-          className="d-block w-100"
-          src="https://www.planetware.com/wpimages/2020/02/france-in-pictures-beautiful-places-to-photograph-eiffel-tower.jpg"
-          alt="slide"
-        />
-        <div className="text-center mt-5">Active slide {slide}</div>
-        <div className="buttons mt-3">
-          <button
-            className="btn btn-primary me-2"
-            onClick={() => changeSlide(-1)}
-          >
-            -1
-          </button>
-          <button
-            className="btn btn-primary me-2"
-            onClick={() => changeSlide(1)}
-          >
-            +1
-          </button>
+    <Transition
+      in={show}
+      timeout={duration}
+      onEnter={() => props.setShowButton(false)}
+      onExited={() => props.setShowButton(true)}
+      unmountOnExit
+    >
+      {(state) => (
+        <div
+          className="modal mt-5 d-block"
+          style={{
+            ...defaultStyle,
+            ...transitionStyles[state],
+          }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Типичное модальное окно</h5>
+                <button
+                  onClick={() => props.onClose(false)}
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Содержимое модального окна</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  onClick={() => props.onClose(false)}
+                  type="button"
+                  className="btn btn-secondary"
+                >
+                  Закрыть
+                </button>
+                <button
+                  onClick={() => props.onClose(false)}
+                  type="button"
+                  className="btn btn-primary"
+                >
+                  Сохранить изменения
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </Container>
+      )}
+    </Transition>
   );
 };
-
-const SliderSecond = (props) => {
-  const { slide, changeSlide, autoplay, setAutoplay } = props;
-  return (
-    <Container>
-      <div className="slider w-50 m-auto">
-        <img
-          className="d-block w-100"
-          src="https://www.planetware.com/wpimages/2020/02/france-in-pictures-beautiful-places-to-photograph-eiffel-tower.jpg"
-          alt="slide"
-        />
-        <div className="text-center mt-5">
-          Active slide {slide} <br />
-          {autoplay ? "auto" : null}
-        </div>
-        <div className="buttons mt-3">
-          <button
-            className="btn btn-primary me-2"
-            onClick={() => changeSlide(-1)}
-          >
-            -1
-          </button>
-          <button
-            className="btn btn-primary me-2"
-            onClick={() => changeSlide(1)}
-          >
-            +1
-          </button>
-
-          <button
-            className="btn btn-primary me-2"
-            onClick={() => setAutoplay((autoplay) => !autoplay)}
-          >
-            toggle autoplay
-          </button>
-        </div>
-      </div>
-    </Container>
-  );
-};
-
-// Здесь HOC подключает разные компоненты по одной логике
-const SliderWithFirstFetch = withSlider(SliderFirst, getDataFormFirstFetch);
-const SliderWithSecondFetch = withSlider(SliderSecond, getDataFormSecondFetch);
-
-// Здесь HOC дополняет компонент Hello своей логикой, не меняя его самого (применяется, например, для подключения метрики)
-// Это сокращенный вид компонента высшего порядка - HOC
-const withLogger = (WrappedComponent) => (props) => {
-  useEffect(() => {
-    console.log("first render!");
-  }, []);
-  return <WrappedComponent {...props} />;
-};
-
-const Hello = () => {
-  return <h1>Hello</h1>;
-};
-
-const HelloWithLogger = withLogger(Hello);
 
 function App() {
+  const [showModal, setShowModal] = useState(false);
+  const [showButton, setShowButton] = useState(true);
+
   return (
-    <>
-      <HelloWithLogger />
-      <SliderWithFirstFetch />
-      <SliderWithSecondFetch />
-    </>
+    <Container>
+      <Modal
+        show={showModal}
+        onClose={setShowModal}
+        setShowButton={setShowButton}
+      />
+      {showButton ? (
+        <button
+          type="button"
+          className="btn btn-warning mt-5"
+          onClick={() => setShowModal(true)}
+        >
+          Открыть модальное окно
+        </button>
+      ) : null}
+    </Container>
   );
 }
 
